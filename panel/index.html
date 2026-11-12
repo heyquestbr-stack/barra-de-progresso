@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Painel</title>
+<style>
+@font-face { font-family: 'DM Sans Variable'; src: url(fonts/dm-sans-latin-wght-normal.woff2) format('woff2'); font-weight: 100 1000; }
+@font-face { font-family: 'JetBrains Mono Variable'; src: url(fonts/jetbrains-mono-latin-wght-normal.woff2) format('woff2'); font-weight: 100 800; }
+/* Tokens de cor (escuro e claro). O Orca põe a classe light/dark no <html>. */
+:root {
+  --bg: #0d0e0c; --surface: #131411; --line: #262822; --line-strong: #3a3c35;
+  --ink: #f2f0eb; --muted: #c4beb4; --faint: #7f796f; --faint-text: #9a948a;
+  --lime: #c9ff58; --lime-bar: #c9ff58; --lime-text: #c9ff58; --lime-dim: color-mix(in srgb, #c9ff58 55%, #131411);
+  --hot: #f0b03a; --hot-soft: color-mix(in srgb, #f0b03a 10%, #131411); --hot-dim: color-mix(in srgb, #f0b03a 55%, #131411);
+  --green-100: #1f2c15; --green-700: #a8de6a;
+  --card-grad: linear-gradient(180deg, #1b1c18, #161713); --card-top: rgb(255 255 255 / .05); --card-edge: rgb(255 255 255 / .06);
+  --done-bg: rgb(0 0 0 / .18); --shine: rgb(255 255 255 / .45);
+  --lime-ink: #151515; --lime-soft: color-mix(in srgb, #c9ff58 12%, #131411);
+  --rose-100: #341e1e; --rose-ink: #f4a9a9; --lilac-100: #2a2134; --lilac-ink: #d2b8f4;
+}
+html.light {
+  --bg: #fbfaf7; --surface: #f5f3ee; --line: #e6e1d8; --line-strong: #cfc8bc;
+  --ink: #1c1b18; --muted: #4f4a43; --faint: #857f75; --faint-text: #6e685f;
+  --lime-bar: #a6db2e; --lime-text: #3e7418; --lime-dim: #6f9a0c;
+  --hot: #8f5e00; --hot-soft: color-mix(in srgb, #8f5e00 9%, #ffffff); --hot-dim: color-mix(in srgb, #8f5e00 55%, #ffffff);
+  --green-100: #f0fbd9; --green-700: #3e7418;
+  --card-grad: #ffffff; --card-top: rgb(255 255 255 / 0); --card-edge: #e6e1d8;
+  --done-bg: #f6f4ef; --shine: rgb(255 255 255 / .6);
+  --lime-soft: #f0fbd9; --rose-100: #fcebeb; --rose-ink: #9b2c2c; --lilac-100: #f2e8fd; --lilac-ink: #6b3fa0;
+}
+:root {
+  --font-text: 'DM Sans Variable', system-ui, sans-serif; --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+  --r-card: 16px; --r-pill: 999px; --ease: cubic-bezier(.16, 1, .3, 1);
+}
+* { box-sizing: border-box; margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 450 12.5px/1.45 var(--font-text); padding: 14px 12px 20px; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+
+.sh { display: flex; align-items: baseline; gap: 10px; margin: 0 2px 9px; }
+.sh h2 { font: 700 15px/1 var(--font-text); letter-spacing: -.015em; }
+.n { font: 600 11px/1 var(--font-mono); }
+.n.lime { color: var(--lime-text); } .n.hot { color: var(--hot); }
+.live { margin-left: auto; display: flex; align-items: center; gap: 6px; font: 500 9.5px/1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+.pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--lime-bar); animation: pulse 2s var(--ease) infinite; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, #c9ff58 50%, transparent); } 100% { box-shadow: 0 0 0 6px transparent; } }
+
+.card { background: var(--card-grad); border: 1px solid var(--card-edge); box-shadow: inset 0 1px 0 var(--card-top); border-radius: var(--r-card); overflow: hidden; }
+.task { padding: 14px 14px 13px; border-top: 1px solid var(--line); }
+.task:first-child { border-top: 0; }
+.top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.name { font: 600 14px/1.25 var(--font-text); letter-spacing: -.005em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.top .name { flex: 1 1 auto; min-width: 0; }
+.det { font: 500 12px/1 var(--font-text); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55%; flex: 0 1 auto; }
+.pct { font: 300 26px/.9 var(--font-text); letter-spacing: -.03em; font-variant-numeric: tabular-nums; color: var(--lime-text); flex: none; }
+.pct small { font-size: 13px; font-weight: 500; margin-left: 1px; color: var(--lime-dim); }
+.bar { position: relative; height: 8px; border-radius: var(--r-pill); background: var(--bg); margin-top: 10px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--line); }
+.bar i { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: var(--lime-bar); overflow: hidden; transition: width .6s var(--ease); }
+.bar i::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, var(--shine), transparent); transform: translateX(-100%); animation: run 1.8s var(--ease) infinite; }
+@keyframes run { to { transform: translateX(100%); } }
+.bar.indet i { width: 100%; background: repeating-linear-gradient(135deg, var(--lime-bar) 0 6px, var(--lime-dim) 6px 12px); background-size: 34px 100%; animation: indet 1s linear infinite; }
+.bar.indet i::after { display: none; }
+@keyframes indet { to { background-position: 34px 0; } }
+.meta { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-top: 9px; }
+.qty { font: 500 11px/1 var(--font-mono); color: var(--faint-text); }
+.qty b { color: var(--muted); font-weight: 600; }
+.eta { font: 500 12px/1 var(--font-text); color: var(--muted); white-space: nowrap; }
+.eta b { color: var(--ink); font-weight: 700; }
+
+.task.stall { background: linear-gradient(90deg, var(--hot-soft), transparent 80%); }
+.task.stall .pct { color: var(--hot); } .task.stall .pct small { color: var(--hot-dim); }
+.task.stall .bar i { background: repeating-linear-gradient(135deg, var(--hot) 0 5px, var(--hot-dim) 5px 10px); }
+.task.stall .bar i::after { display: none; }
+.warn { font: 600 12px/1 var(--font-text); color: var(--hot); white-space: nowrap; }
+
+.done { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 14px; border-top: 1px solid var(--line); background: var(--done-bg); }
+.card > .done:first-child { border-top: 0; }
+#feitas .done { background: transparent; }
+#grupos .done { background: transparent; }
+.titulo-cv { display: flex; align-items: baseline; gap: 6px; }
+.titulo-cv .caret { transform: rotate(90deg); }
+.titulo-cv[aria-expanded="false"] .caret { transform: none; }
+#grupos .done.guardar { justify-content: center; padding: 8px 14px; }
+#grupos .done.guardar .list { flex: none; color: var(--faint-text); font-size: 11px; }
+#grupos .done.guardar .caret { transform: rotate(-90deg); }
+#feitas .drow { background: transparent; }
+.check { width: 15px; height: 15px; border-radius: 50%; background: var(--green-100); color: var(--green-700); display: grid; place-items: center; font-size: 9px; font-weight: 700; flex: none; }
+.done strong { font: 600 12px/1 var(--font-text); color: var(--muted); flex: none; }
+.done .list { font: 400 11.5px/1 var(--font-text); color: var(--faint); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.caret { color: var(--faint); font-size: 9px; width: 10px; flex: none; transition: transform .2s var(--ease); }
+.done[aria-expanded="true"] .caret { transform: rotate(90deg); }
+.drow { display: flex; align-items: baseline; gap: 8px; padding: 8px 14px 8px 37px; border-top: 1px solid var(--line); background: var(--done-bg); }
+.drow span:first-child { flex: 1; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.drow span:last-child { font: 500 10.5px/1 var(--font-mono); color: var(--faint); white-space: nowrap; }
+
+.empty { padding: 22px 16px; text-align: center; }
+.empty h3 { font: 600 13.5px/1.3 var(--font-text); margin-bottom: 6px; }
+.empty p { color: var(--faint-text); }
+.empty code, .err code { font: 500 11px/1.4 var(--font-mono); color: var(--ink); background: var(--bg); padding: 1px 5px; border-radius: 5px; border: 1px solid var(--line); word-break: break-all; }
+.err { padding: 14px; color: var(--hot); font-weight: 600; }
+.err p { color: var(--muted); font-weight: 450; margin-top: 6px; }
+
+/* Com você: lista. */
+section + section { margin-top: 20px; }
+.n.faint { color: var(--faint-text); } .n.c { color: var(--muted); }
+.wt { display: block; width: 100%; padding: 11px 14px; border-top: 1px solid var(--line); }
+.wt:first-child { border-top: 0; }
+.wt:hover { background: var(--surface); }
+.gh { display: flex; align-items: center; gap: 8px; }
+/* Ação primeiro: o nome da worktree é a etiqueta, o que fazer é o texto grande. */
+.wt-nome { font: 600 10.5px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: var(--surface); border: 1px solid var(--line-strong); border-radius: 6px; padding: 4px 7px; flex: 0 1 auto; min-width: 0; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: auto; }
+.acao { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-top: 8px; color: var(--ink); font: 600 13px/1.35 var(--font-text); letter-spacing: -.005em; overflow-wrap: anywhere; }
+.acao code { font-size: 10.5px; }
+.chip { font: 600 9.5px/1 var(--font-mono); letter-spacing: .07em; text-transform: uppercase; padding: 4px 7px; border-radius: 7px; white-space: nowrap; }
+.c-rose { background: var(--rose-100); color: var(--rose-ink); }
+.c-hot { background: var(--hot-soft); color: var(--hot); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hot) 25%, transparent); }
+.c-lilac { background: var(--lilac-100); color: var(--lilac-ink); }
+.c-lime { background: var(--lime-soft); color: var(--lime-text); }
+.count { font: 600 10.5px/1 var(--font-mono); color: var(--faint-text); min-width: 18px; text-align: right; }
+code { font: 500 11px/1.4 var(--font-mono); background: var(--bg); padding: 1px 5px; border-radius: 5px; border: 1px solid var(--line); overflow-wrap: anywhere; }
+.btn { font: 700 11.5px/1 var(--font-text); color: var(--lime-ink); background: var(--lime); border-radius: var(--r-pill); padding: 6px 12px; flex: none; }
+.btn2 { font: 600 11.5px/1 var(--font-text); color: var(--muted); border-radius: var(--r-pill); padding: 6px 11px; box-shadow: inset 0 0 0 1px var(--line-strong); flex: none; }
+
+/* Com você: tela da worktree. */
+.voltar { display: flex; align-items: center; gap: 8px; margin: 0 2px 12px; }
+.voltar .seta { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--line); color: var(--muted); font-size: 13px; flex: none; }
+.voltar h2 { font: 700 16px/1.1 var(--font-text); letter-spacing: -.015em; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.resumo { padding: 13px 14px; margin-bottom: 10px; }
+.resumo .frase { font: 600 13.5px/1.4 var(--font-text); color: var(--ink); }
+.resumo .meta { margin-top: 10px; align-items: center; }
+.fala { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--muted); white-space: pre-wrap; font-size: 12px; max-height: 320px; overflow: auto; }
+.cache { display: inline-flex; align-items: center; gap: 5px; font: 500 10.5px/1.3 var(--font-mono); color: var(--faint-text); }
+.cache i { width: 6px; height: 6px; border-radius: 50%; background: var(--lime-bar); flex: none; }
+.cache.frio i { background: var(--faint); }
+.link { font: 500 11px/1 var(--font-text); color: var(--faint-text); text-decoration: underline; text-underline-offset: 2px; flex: none; }
+.sub { display: flex; align-items: baseline; gap: 8px; margin: 18px 2px 8px; }
+.sub h3 { font: 700 12.5px/1 var(--font-text); }
+.pend { display: flex; gap: 10px; padding: 11px 14px; border-top: 1px solid var(--line); cursor: pointer; }
+.pend:first-child { border-top: 0; }
+.bola { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--line-strong); flex: none; margin-top: 1px; display: grid; place-items: center; color: var(--lime-text); font-size: 14px; line-height: 0; }
+.pend.fila .bola { border-color: var(--lime-dim); }
+.pend .txt { flex: 1; min-width: 0; }
+.pend .txt > p { color: var(--ink); overflow-wrap: anywhere; }
+.pend:not(.open) .txt > p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--muted); }
+.pend.riscado .txt > p { text-decoration: line-through; color: var(--faint); }
+.pend.open { background: var(--surface); cursor: default; }
+.det { padding: 0; margin-top: 8px; color: var(--faint-text); font-size: 12px; }
+.det li { margin: 3px 0 0 16px; }
+.na-fila { margin-top: 6px; font: 500 11px/1.35 var(--font-mono); color: var(--lime-text); }
+.acoes { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+textarea { width: 100%; margin-top: 10px; min-height: 58px; resize: vertical; background: var(--bg); color: var(--ink); border: 1px solid var(--lime-dim); border-radius: 10px; padding: 8px 10px; font: 450 12.5px/1.4 var(--font-text); }
+textarea:focus { outline: none; border-color: var(--lime-bar); }
+.fila { position: sticky; bottom: 8px; margin-top: 16px; padding: 11px 12px; border-radius: 14px; background: var(--lime); color: var(--lime-ink); display: flex; align-items: center; gap: 8px; box-shadow: 0 10px 30px rgb(0 0 0 / .45); }
+.fila.erro { background: var(--rose-100); color: var(--rose-ink); }
+.fila .q { flex: 1; font: 600 12px/1.3 var(--font-text); }
+.fila .q small { display: block; font: 500 10.5px/1.3 var(--font-mono); opacity: .7; }
+.fila button { background: var(--lime-ink); color: var(--lime); font: 700 11.5px/1 var(--font-text); border-radius: var(--r-pill); padding: 7px 13px; }
+.fila button.ghost { background: transparent; color: var(--lime-ink); box-shadow: inset 0 0 0 1px rgb(0 0 0 / .25); }
+.fila button:disabled { opacity: .6; }
+</style>
+</head>
+<body>
+<div id="inicio">
+<section>
+  <div class="sh" id="cabeca"><h2>Rodando</h2><span class="live"><span class="pulse"></span>ao vivo</span></div>
+  <div class="card" id="lista"></div>
+</section>
+<section id="comvoce" hidden>
+  <div class="sh" id="cabeca-cv"><h2>Com você</h2></div>
+  <div class="card" id="grupos"></div>
+</section>
+<section id="secao-feitas" hidden>
+  <div class="card" id="feitas"></div>
+</section>
+</div>
+<div id="tela" hidden></div>
+<script type="module" src="app.ts"></script>
+</body>
+</html>

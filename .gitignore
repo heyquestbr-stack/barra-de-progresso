@@ -1,0 +1,8 @@
+.orca/
+node_modules/
+.DS_Store
+._*
+PENDENCIAS.md
+BRIEFING.md
+STATE.md
+docs/

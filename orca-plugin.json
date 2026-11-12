@@ -1,0 +1,97 @@
+{
+  "manifestVersion": 2,
+  "id": "painel",
+  "name": "Painel",
+  "version": "0.2.0",
+  "description": "Barras de progresso de qualquer script, ao vivo na sidebar.",
+  "engines": {
+    "orca": ">=1.4.248"
+  },
+  "execution": "trusted-worker",
+  "pluginApi": 1,
+  "main": "src/worker.ts",
+  "contributes": {
+    "panels": [
+      {
+        "id": "painel",
+        "title": "Painel",
+        "icon": "activity",
+        "entry": "panel/index.html"
+      }
+    ],
+    "statusBarItems": [
+      {
+        "id": "tarefas",
+        "text": "nada rodando",
+        "icon": "activity",
+        "tooltip": "Painel: tarefas"
+      }
+    ],
+    "settings": [
+      {
+        "key": "pasta",
+        "title": "Pasta dos JSON de progresso",
+        "type": "string",
+        "default": "~/.claude/state/progresso"
+      },
+      {
+        "key": "minutosParada",
+        "title": "Minutos sem mudar até marcar como parada",
+        "type": "integer",
+        "default": 2,
+        "minimum": 1
+      },
+      {
+        "key": "pastaHandoffs",
+        "title": "Pasta dos handoffs (PENDENTE-*.md)",
+        "type": "string",
+        "default": "~/.claude/handoffs"
+      },
+      {
+        "key": "arquivoPendencias",
+        "title": "Arquivo de pendências na raiz de cada worktree",
+        "type": "string",
+        "default": "PENDENCIAS.md"
+      },
+      {
+        "key": "campos",
+        "title": "Nomes dos campos (JSON, opcional)",
+        "type": "string",
+        "default": "",
+        "placeholder": "{\"feito\":\"done\",\"total\":\"total\"}"
+      },
+      {
+        "key": "resumoIA",
+        "title": "Resumir a fala do agente com IA (claude -p, ~US$ 0,0004 cada)",
+        "type": "boolean",
+        "default": true
+      },
+      {
+        "key": "modeloResumo",
+        "title": "Modelo do resumo",
+        "type": "string",
+        "default": "claude-haiku-5-5"
+      },
+      {
+        "key": "pastaConfigClaude",
+        "title": "Pasta de configuração do Claude pro resumo (vazio = a do Orca)",
+        "type": "string",
+        "default": ""
+      }
+    ]
+  },
+  "capabilities": [
+    {
+      "kind": "settings:own"
+    },
+    {
+      "kind": "storage:own"
+    },
+    {
+      "kind": "workspace:read"
+    },
+    {
+      "kind": "agent:launch"
+    }
+  ]
+}
