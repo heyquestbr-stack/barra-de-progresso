@@ -77,6 +77,14 @@ E no `~/.claude/settings.json`, dentro de `"hooks"`:
 
 Testes: `python3 -m unittest scripts/test_acompanha.py`.
 
+## Acha sozinho as cópias e transferências longas
+
+Esqueceu o wrapper? O Painel olha os processos do Mac (`ps`, a cada 2 s) e mostra uma barra para qualquer `rclone` (copy, copyto, sync, move, moveto, size, e ls/lsf/lsl com `-R`), `rsync`, `ditto`, `cp -R`, `scp`, `git push/clone/fetch/pull/lfs` que passe de 30 s de vida. Sem total conhecido, a barra mostra "rodando há X min" e some quando o processo termina.
+
+- **Nome:** `rclone copy: compdrive:…/Boma → xtdrive:BKP`. Senha, token, `user:senha@` e `?query` de URL nunca aparecem.
+- **Sem barra dobrada:** rclone com `--stats`/`--rc`, filho do `progresso.py`/`acompanha.py`, e processo que já tem barra do hook ficam de fora. Vale a barra com número.
+- **Desligar:** configuração **Achar sozinho rclone, rsync, git…** (liga por padrão).
+
 ## Extra: upload com rclone
 
 `scripts/progresso-rclone.py` roda um `rclone` e grava o JSON sozinho:
@@ -97,6 +105,7 @@ A seção Com você pode resumir a última fala de cada agente numa linha, com `
 orca plugin dev load .   # carrega a pasta no Orca
 orca plugin test .       # roda os testes do plugin
 python3 -m unittest scripts/test_acompanha.py   # testes da barra automática
+# o detector de processos tem testes em src/processos.test.ts (rodam no orca plugin test)
 ```
 
 ## Licença

@@ -2,7 +2,7 @@
   "manifestVersion": 2,
   "id": "painel",
   "name": "Painel",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Barras de progresso de qualquer script, ao vivo na sidebar.",
   "engines": {
     "orca": ">=1.4.248"
@@ -33,6 +33,12 @@
         "title": "Pasta dos JSON de progresso",
         "type": "string",
         "default": "~/.claude/state/progresso"
+      },
+      {
+        "key": "detectarProcessos",
+        "title": "Achar sozinho rclone, rsync, git e cópias longas (mais de 30 s)",
+        "type": "boolean",
+        "default": true
       },
       {
         "key": "minutosParada",

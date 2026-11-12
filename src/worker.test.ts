@@ -11,7 +11,7 @@ test('tarefas.get lê a pasta, ignora JSON quebrado e ordena', async () => {
   writeFileSync(join(pasta, 'b.json'), JSON.stringify({ nome: 'B', feito: 1, total: 1, unidade: 'GB', atualizado: agora, fim: true }))
   writeFileSync(join(pasta, 'quebrado.json'), '{"nome": "meio escr')
   writeFileSync(join(pasta, 'a.log'), 'não é json')
-  const worker = await mountWorker(main, { host: mockHost({ settings: { pasta, minutosParada: 2, campos: '' } }) })
+  const worker = await mountWorker(main, { host: mockHost({ settings: { pasta, minutosParada: 2, campos: '', detectarProcessos: false } }) })
   const r = await worker.request('tarefas.get')
   assert.equal(r.erro, null)
   assert.deepEqual(r.tarefas.map((t) => [t.nome, t.estado, t.pct]), [['A', 'ativa', 50], ['B', 'concluida', 100]])
@@ -20,7 +20,7 @@ test('tarefas.get lê a pasta, ignora JSON quebrado e ordena', async () => {
 })
 
 test('pasta que não existe devolve erro e lista vazia', async () => {
-  const worker = await mountWorker(main, { host: mockHost({ settings: { pasta: '/nao/existe/painel', minutosParada: 2, campos: '' } }) })
+  const worker = await mountWorker(main, { host: mockHost({ settings: { pasta: '/nao/existe/painel', minutosParada: 2, campos: '', detectarProcessos: false } }) })
   const r = await worker.request('tarefas.get')
   assert.deepEqual(r.tarefas, [])
   assert.match(r.erro ?? '', /não achei/i)

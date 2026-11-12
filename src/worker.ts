@@ -8,6 +8,7 @@ import { homedir, tmpdir, userInfo } from 'node:os'
 import { join } from 'node:path'
 import type { OrcaWorkerApi } from 'orca/worker'
 import { cacheQuente, fonteDaAcao, lerPendencias, montarGrupos, montarMensagem, type Entrada, type Grupo, type Handoff, type Item, type WtInfo } from './comvoce'
+import { lerProcessos, parsearPs } from './processos'
 import type { EstadoComVoce, EstadoPainel } from './protocol'
 import {
   anotar, camposDe, estadoDe, etaDe, lerTarefa, ordenar, pctDe, REGRAS_PADRAO, resumo,
@@ -180,7 +181,15 @@ export default function activate(orca: OrcaWorkerApi): void {
     const campos = camposDe(await orca.settings.get('campos'))
     const minutos = Number(await orca.settings.get('minutosParada')) || 2
     const regras = { ...REGRAS_PADRAO, paradaMs: minutos * 60_000 }
-    estado = { ...(await lerPasta(pasta, campos, regras, amostras, Date.now(), vistos)), pasta }
+    const agora = Date.now()
+    const lido = await lerPasta(pasta, campos, regras, amostras, agora, vistos)
+    // Processos longos de transferência (rclone, rsync, git...) que ninguém embrulhou: entram como tarefa sem total.
+    if ((await orca.settings.get('detectarProcessos')) !== false) {
+      const ps = await rodar('ps', ['-axo', 'pid,ppid,etime,command'], 4000).catch(() => '')
+      const achados = lerProcessos(parsearPs(ps), agora, lido.tarefas.filter((t) => !t.id.startsWith('proc-')))
+      lido.tarefas = ordenar([...lido.tarefas, ...achados.map((b) => ({ ...b, estado: 'ativa' as const, pct: null, etaMs: null }))])
+    }
+    estado = { ...lido, pasta }
     const texto = JSON.stringify(estado)
     if (texto !== ultimo) {
       ultimo = texto
