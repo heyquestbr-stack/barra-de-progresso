@@ -155,7 +155,7 @@ def main():
             grava(arq, dict(d, nome=a.nome, inicio=inicio, atualizado=int(time.time() * 1000), fim=True))
             return
         cauda = pedaco(a.log, -1, CAUDA)
-        r = ler(cauda, pedaco(a.log, 0, CABECA)) or {'feito': 0, 'total': 0, 'unidade': '', 'detalhe': 'começando'}
+        r = ler(cauda, pedaco(a.log, 0, CABECA)) or {'feito': 0, 'total': 0, 'unidade': '', 'detalhe': ''}
         ultimo = r
         m = FIM.search(cauda)
         quietas = 0 if escrevendo(a.log) else quietas + 1

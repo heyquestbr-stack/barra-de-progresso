@@ -59,7 +59,8 @@ const ha = (t: number): string => `há ${duracao(Math.max(0, Date.now() - t))}`
 
 function quantidade(t: Tarefa): string {
   const u = t.unidade ? ` ${esc(t.unidade)}` : ''
-  return t.total > 0 ? `<b>${numero(t.feito)}</b> / ${numero(t.total)}${u}` : `<b>${numero(t.feito)}</b>${u}`
+  if (t.total > 0) return `<b>${numero(t.feito)}</b> / ${numero(t.total)}${u}`
+  return t.feito > 0 ? `<b>${numero(t.feito)}</b>${u}` : 'sem contagem'
 }
 
 function linhaTarefa(t: Tarefa): string {
@@ -70,7 +71,9 @@ function linhaTarefa(t: Tarefa): string {
     : `<div class="bar"><i style="width:${t.pct.toFixed(1)}%"></i></div>`
   const direita = parada
     ? `<span class="warn">parada ${ha(t.atualizado)}</span>`
-    : t.etaMs !== null ? `<span class="eta">falta <b>${duracao(t.etaMs)}</b></span>` : '<span class="eta">calculando…</span>'
+    : t.etaMs !== null ? `<span class="eta">falta <b>${duracao(t.etaMs)}</b></span>`
+      : t.total > 0 ? '<span class="eta">calculando…</span>'
+        : `<span class="eta">rodando ${ha(t.inicio ?? t.atualizado)}</span>`
   return `<div class="task${parada ? ' stall' : ''}">
     <div class="top"><span class="name" title="${esc(t.nome)}">${esc(t.nome)}</span>${t.detalhe ? `<span class="det" title="${esc(t.detalhe)}">${esc(t.detalhe)}</span>` : ''}${pct}</div>
     ${barra}
