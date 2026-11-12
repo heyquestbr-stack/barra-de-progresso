@@ -48,6 +48,34 @@ O script grava um arquivo JSON em `~/.claude/state/progresso/<id>.json`. O Paine
 
 Se o seu script já grava JSON com outros nomes de campo, ajuste em **Nomes dos campos** nas configurações. Ex.: `{"feito":"done","total":"size"}`.
 
+## Barra automática pra toda tarefa do Claude Code
+
+Com o hook ligado, toda tarefa que o Claude Code põe em segundo plano e que passa de 30 segundos ganha uma barra sozinha. Não precisa de script por tarefa.
+
+- **Nome da barra:** a descrição do comando.
+- **O que ele lê no log:** `45%`, `1.234/5.000 arquivos`, o rclone (`Transferred: 1 GiB / 5 GiB`), o ffmpeg (`time=` contra `Duration:`), o HyperFrames (`@hf-progress`) e o Blender (`Sample N/M`). Sem número, a barra fica em movimento, com a última linha do log ao lado.
+- **Fim:** quando a tarefa termina, a barra vira concluída. Se ela sair com erro, aparece `erro (código N)`.
+- Também pega `nohup comando > arquivo.log &`.
+- **Pular uma tarefa:** ponha `# sem-barra` no comando. Scripts que já gravam a própria barra ficam de fora.
+
+**Ligar** (troque `<pasta do plugin>` pelo caminho onde o Orca guardou o plugin, ou pelo seu clone):
+
+```sh
+mkdir -p ~/.claude/scripts
+ln -sf "<pasta do plugin>/scripts/acompanha.py" ~/.claude/scripts/acompanha.py
+ln -sf "<pasta do plugin>/scripts/acompanha_hook.py" ~/.claude/scripts/acompanha_hook.py
+```
+
+E no `~/.claude/settings.json`, dentro de `"hooks"`:
+
+```json
+"PostToolUse": [
+  { "matcher": "Bash", "hooks": [ { "type": "command", "command": "python3 \"$HOME/.claude/scripts/acompanha_hook.py\"", "timeout": 5 } ] }
+]
+```
+
+Testes: `python3 -m unittest scripts/test_acompanha.py`.
+
 ## Extra: upload com rclone
 
 `scripts/progresso-rclone.py` roda um `rclone` e grava o JSON sozinho:
@@ -66,7 +94,8 @@ A seção Com você pode resumir a última fala de cada agente numa linha, com `
 
 ```sh
 orca plugin dev load .   # carrega a pasta no Orca
-orca plugin test .       # roda os testes
+orca plugin test .       # roda os testes do plugin
+python3 -m unittest scripts/test_acompanha.py   # testes da barra automática
 ```
 
 ## Licença
