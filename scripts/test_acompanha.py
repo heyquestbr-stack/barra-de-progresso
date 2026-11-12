@@ -102,6 +102,9 @@ class Achar(unittest.TestCase):
     def test_sem_barra(self):
         self.assertIsNone(achar(payload('rsync a b # sem-barra', SAIDA)))
 
+    def test_sem_barra_na_descricao(self):
+        self.assertIsNone(achar(payload('rm -rf x', SAIDA, desc='Apagar x # sem-barra')))
+
     def test_ja_tem_barra_propria(self):
         for c in ['~/.claude/scripts/progresso.py "x" rclone copy a b', 'blender-com-barra.py x', 'copia-rapida.sh x a b',
                   'echo 1 > ~/.claude/state/progresso/x.json']:

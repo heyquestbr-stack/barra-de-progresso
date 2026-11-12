@@ -23,7 +23,7 @@ def achar(p):
     """Payload do hook -> (log, nome), ou None se nao e tarefa pra acompanhar."""
     ti = p.get('tool_input') or {}
     cmd = ti.get('command') or ''
-    if PULA.search(cmd):
+    if PULA.search(cmd) or re.search(r'#\s*sem-barra', ti.get('description') or ''):
         return None
     nome = (ti.get('description') or '').strip() or cmd.strip()[:60]
 

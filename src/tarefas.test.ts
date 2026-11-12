@@ -39,6 +39,11 @@ test('estadoDe: ativa, parada, concluída e concluída velha some', () => {
   assert.equal(estadoDe({ ...base, fim: true }, AGORA + 25 * 3_600_000), null)
 })
 
+test('estadoDe: parada há mais de 30 min foi cancelada e sai da lista', () => {
+  assert.equal(estadoDe(base, AGORA + 29 * 60_000), 'parada')
+  assert.equal(estadoDe(base, AGORA + 31 * 60_000), null)
+})
+
 test('pctDe: conta, limita a 100, fim = 100, sem total = null', () => {
   assert.equal(pctDe({ ...base, feito: 9, total: 36 }), 25)
   assert.equal(pctDe({ ...base, feito: 50, total: 36 }), 100)

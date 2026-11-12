@@ -2,14 +2,15 @@
 
 export type Estado = 'ativa' | 'parada' | 'concluida'
 export type Campos = { nome: string; feito: string; total: string; unidade: string; detalhe: string; inicio: string; atualizado: string; fim: string }
-export type Regras = { paradaMs: number; concluidaMs: number }
+/** canceladaMs: parada há mais que isso = o processo morreu sem avisar (cancelado); sai da lista. */
+export type Regras = { paradaMs: number; concluidaMs: number; canceladaMs: number }
 /** inicio: hora em que a tarefa começou (ms), ou null se o JSON não diz; o worker põe a 1ª vez que viu o arquivo. */
 export type Bruta = { id: string; nome: string; feito: number; total: number; unidade: string; detalhe: string; inicio: number | null; atualizado: number; fim: boolean }
 export type Amostra = { t: number; feito: number }
 export type Tarefa = Bruta & { estado: Estado; pct: number | null; etaMs: number | null }
 
 export const CAMPOS_PADRAO: Campos = { nome: 'nome', feito: 'feito', total: 'total', unidade: 'unidade', detalhe: 'detalhe', inicio: 'inicio', atualizado: 'atualizado', fim: 'fim' }
-export const REGRAS_PADRAO: Regras = { paradaMs: 2 * 60_000, concluidaMs: 24 * 3_600_000 }
+export const REGRAS_PADRAO: Regras = { paradaMs: 2 * 60_000, concluidaMs: 24 * 3_600_000, canceladaMs: 30 * 60_000 }
 const JANELA_MS = 5 * 60_000
 
 function num(v: unknown): number | null {
@@ -47,10 +48,11 @@ export function lerTarefa(id: string, bruto: unknown, campos: Campos = CAMPOS_PA
   }
 }
 
-/** null = não mostrar (concluída há mais de `concluidaMs`). */
+/** null = não mostrar (concluída há mais de `concluidaMs`, ou parada há mais de `canceladaMs`). */
 export function estadoDe(b: Bruta, agora: number, regras: Regras = REGRAS_PADRAO): Estado | null {
   const idade = agora - b.atualizado
   if (b.fim) return idade > regras.concluidaMs ? null : 'concluida'
+  if (idade > Math.max(regras.canceladaMs, regras.paradaMs)) return null
   return idade > regras.paradaMs ? 'parada' : 'ativa'
 }
 

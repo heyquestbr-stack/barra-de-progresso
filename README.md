@@ -43,7 +43,7 @@ O script grava um arquivo JSON em `~/.claude/state/progresso/<id>.json`. O Paine
 | `unidade` | Opcional. Ex.: `GB`, `%`, `shaders`. |
 | `detalhe` | Opcional. Texto curto ao lado da porcentagem, como a fase da tarefa. Não ponha o tempo que falta: o Painel calcula pelo ritmo. |
 | `inicio` | Opcional. Hora em que a tarefa começou (ms ou segundos). Define a ordem: quem começou primeiro fica em cima. Sem ele, vale a hora em que o Painel viu o arquivo pela primeira vez. |
-| `atualizado` | Hora da última gravação (ms ou segundos). Obrigatório. Sem novidade por 2 minutos, a tarefa aparece como parada. |
+| `atualizado` | Hora da última gravação (ms ou segundos). Obrigatório. Sem novidade por 2 minutos, a tarefa aparece como parada. Parada por mais de 30 minutos, ela sai da lista (o processo foi cancelado). |
 | `fim` | `true` quando acabou. A tarefa desce pro cartão de concluídas e some depois de 24 horas. |
 
 Se o seu script já grava JSON com outros nomes de campo, ajuste em **Nomes dos campos** nas configurações. Ex.: `{"feito":"done","total":"size"}`.
@@ -56,7 +56,7 @@ Com o hook ligado, toda tarefa que o Claude Code põe em segundo plano e que pas
 - **O que ele lê no log:** `45%`, `1.234/5.000 arquivos`, o rclone (`Transferred: 1 GiB / 5 GiB`), o ffmpeg (`time=` contra `Duration:`), o HyperFrames (`@hf-progress`) e o Blender (`Sample N/M`). Sem número, a barra fica em movimento, com a última linha do log ao lado.
 - **Fim:** quando a tarefa termina, a barra vira concluída. Se ela sair com erro, aparece `erro (código N)`.
 - Também pega `nohup comando > arquivo.log &`.
-- **Pular uma tarefa:** ponha `# sem-barra` no comando. Scripts que já gravam a própria barra ficam de fora.
+- **Pular uma tarefa:** ponha `# sem-barra` no comando ou na descrição. Scripts que já gravam a própria barra ficam de fora.
 
 **Ligar** (troque `<pasta do plugin>` pelo caminho onde o Orca guardou o plugin, ou pelo seu clone):
 
