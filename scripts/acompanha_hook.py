@@ -10,6 +10,7 @@ import glob
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 
@@ -47,6 +48,28 @@ def achar(p):
     return None
 
 
+RM = re.compile(r'\brm\s+((?:-\w+\s+)+)([^;&|>]+)')
+CD = re.compile(r'\bcd\s+("[^"]+"|\'[^\']+\'|[^\s;&|]+)\s*&&')
+
+
+def apagando(cmd, cwd):
+    """Caminhos de um `rm -r` no comando (absolutos), pra barra medir o espaco que volta. [] se nao tem."""
+    out = []
+    for m in RM.finditer(cmd):
+        if 'r' not in m.group(1).lower():
+            continue
+        cds = [shlex.split(c)[0] for c in CD.findall(cmd[:m.start()])]
+        base = os.path.expanduser(cds[-1]) if cds else cwd
+        try:
+            partes = shlex.split(m.group(2))
+        except ValueError:
+            continue
+        for c in partes:
+            c = os.path.expanduser(c)
+            out.append(c if os.path.isabs(c) else os.path.join(base, c))
+    return out
+
+
 def tarefa(p, tid):
     """O Claude Code grava a saida da tarefa em <pasta da sessao>/tasks/<id>.output; a pasta da sessao e a mae do scratchpad."""
     sp = p.get('scratchpad_dir')
@@ -67,7 +90,9 @@ def main():
             json.dump({'payload': p, 'achou': r}, f, ensure_ascii=False)
         if r:
             leitor = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'acompanha.py')
-            subprocess.Popen([sys.executable, leitor, '--log', r[0], '--nome', r[1]],
+            cmd = (p.get('tool_input') or {}).get('command') or ''
+            extra = ['--apaga', *apagando(cmd, p.get('cwd') or os.getcwd())] if apagando(cmd, '/') else []
+            subprocess.Popen([sys.executable, leitor, '--log', r[0], '--nome', r[1], *extra],
                              stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                              start_new_session=True)
     except Exception:

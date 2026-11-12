@@ -56,6 +56,7 @@ Com o hook ligado, toda tarefa que o Claude Code põe em segundo plano e que pas
 - **O que ele lê no log:** `45%`, `1.234/5.000 arquivos`, o rclone (`Transferred: 1 GiB / 5 GiB`), o ffmpeg (`time=` contra `Duration:`), o HyperFrames (`@hf-progress`) e o Blender (`Sample N/M`). Sem número, a barra fica em movimento, com a última linha do log ao lado.
 - **Fim:** quando a tarefa termina, a barra vira concluída. Se ela sair com erro, aparece `erro (código N)`.
 - Também pega `nohup comando > arquivo.log &`.
+- **Apagar (`rm -r`):** a barra mede o tamanho no começo e mostra quantos GB já voltaram pro disco.
 - **Pular uma tarefa:** ponha `# sem-barra` no comando ou na descrição. Scripts que já gravam a própria barra ficam de fora.
 
 **Ligar** (troque `<pasta do plugin>` pelo caminho onde o Orca guardou o plugin, ou pelo seu clone):

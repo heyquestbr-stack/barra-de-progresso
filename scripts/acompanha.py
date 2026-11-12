@@ -12,6 +12,7 @@ import json
 import os
 import re
 import subprocess
+import threading
 import time
 import unicodedata
 
@@ -102,6 +103,35 @@ def ler(cauda, cabeca=''):
     return {'feito': 0, 'total': 0, 'unidade': '', 'detalhe': linhas[-1][:60]}
 
 
+def apagado(total_kb, livre0, livre):
+    """Barra de um `rm`: quanto espaco ja voltou pro disco, contra o tamanho medido no comeco."""
+    if total_kb is None:
+        return {'feito': 0, 'total': 0, 'unidade': '', 'detalhe': 'medindo o tamanho'}
+    total = round(total_kb / 2**20, 2)
+    feito = round(min(total, max(0, (livre - livre0) / 2**30)), 2)
+    return {'feito': feito, 'total': total, 'unidade': 'GB', 'detalhe': 'apagando'}
+
+
+def livre(caminhos):
+    """Espaco livre (bytes) do disco onde estao os caminhos."""
+    c = caminhos[0]
+    while c and not os.path.exists(c):
+        c = os.path.dirname(c)
+    v = os.statvfs(c or '/')
+    return v.f_bavail * v.f_frsize
+
+
+def medir(caminhos, livre0, guarda):
+    """du em segundo plano (em exFAT pode levar minutos); guarda['kb'] fica None ate acabar.
+    O rm segue apagando enquanto o du mede: o que voltou nesse meio tempo entra no total."""
+    try:
+        r = subprocess.run(['du', '-sk', *caminhos], capture_output=True, text=True)
+        kb = sum(int(l.split()[0]) for l in r.stdout.splitlines() if l.split() and l.split()[0].isdigit())
+        guarda['kb'] = kb + max(0, livre(caminhos) - livre0) // 1024
+    except Exception:
+        guarda['kb'] = 0
+
+
 def pedaco(caminho, inicio, tamanho):
     with open(caminho, 'rb') as f:
         if inicio < 0:
@@ -132,7 +162,13 @@ def main():
     ap.add_argument('--nome', required=True)
     ap.add_argument('--espera', type=float, default=30)
     ap.add_argument('--intervalo', type=float, default=3)
+    ap.add_argument('--apaga', nargs='*', default=[])
     a = ap.parse_args()
+
+    apaga = {'kb': None}
+    if a.apaga:
+        livre0 = livre(a.apaga)
+        threading.Thread(target=medir, args=(a.apaga, livre0, apaga), daemon=True).start()
 
     inicio = int(time.time() * 1000)
     arq = os.path.join(DIR, f"auto-{slug(a.nome)[:40]}-{hashlib.md5(a.log.encode()).hexdigest()[:4]}.json")
@@ -156,6 +192,8 @@ def main():
             return
         cauda = pedaco(a.log, -1, CAUDA)
         r = ler(cauda, pedaco(a.log, 0, CABECA)) or {'feito': 0, 'total': 0, 'unidade': '', 'detalhe': ''}
+        if a.apaga and not r['total']:
+            r = apagado(apaga['kb'], livre0, livre(a.apaga))
         ultimo = r
         m = FIM.search(cauda)
         quietas = 0 if escrevendo(a.log) else quietas + 1

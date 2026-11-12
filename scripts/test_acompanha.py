@@ -3,8 +3,8 @@ import sys
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from acompanha import ler, slug  # noqa: E402
-from acompanha_hook import achar  # noqa: E402
+from acompanha import apagado, ler, slug  # noqa: E402
+from acompanha_hook import achar, apagando  # noqa: E402
 
 
 class Ler(unittest.TestCase):
@@ -70,6 +70,20 @@ class Ler(unittest.TestCase):
         self.assertEqual(slug('Barra automática'), 'barra-automatica')
 
 
+class Apagado(unittest.TestCase):
+    def test_conta_o_espaco_que_voltou(self):
+        r = apagado(total_kb=10 * 2**20, livre0=100 * 2**30, livre=104 * 2**30)
+        self.assertEqual((r['feito'], r['total'], r['unidade']), (4.0, 10.0, 'GB'))
+
+    def test_nunca_passa_do_total_nem_fica_negativo(self):
+        self.assertEqual(apagado(2**20, 100 * 2**30, 200 * 2**30)['feito'], 1.0)
+        self.assertEqual(apagado(2**20, 100 * 2**30, 90 * 2**30)['feito'], 0)
+
+    def test_ainda_medindo(self):
+        r = apagado(None, 0, 0)
+        self.assertEqual((r['total'], r['detalhe']), (0, 'medindo o tamanho'))
+
+
 def payload(cmd, resp, bg=True, desc='Copia o cache'):
     return {'tool_name': 'Bash', 'cwd': '/w',
             'tool_input': {'command': cmd, 'description': desc, 'run_in_background': bg},
@@ -117,6 +131,17 @@ class Achar(unittest.TestCase):
         p = payload('rsync a b', {'stdout': '', 'backgroundTaskId': 'bn1'})
         p['scratchpad_dir'] = '/private/tmp/claude-501/-W-/sess/scratchpad'
         self.assertEqual(achar(p)[0], '/private/tmp/claude-501/-W-/sess/tasks/bn1.output')
+
+    def test_apagando_com_cd(self):
+        self.assertEqual(apagando('cd /T7/v3 && nohup rm -rf shader "pso velho" > l 2>&1 &', '/w'),
+                         ['/T7/v3/shader', '/T7/v3/pso velho'])
+
+    def test_apagando_caminho_absoluto_e_til(self):
+        self.assertEqual(apagando('rm -rf ~/a /b && df -h', '/w'), [os.path.expanduser('~/a'), '/b'])
+
+    def test_rm_sem_r_nao_conta(self):
+        self.assertEqual(apagando('rm -f a.txt', '/w'), [])
+        self.assertEqual(apagando('ls', '/w'), [])
 
     def test_sem_descricao_usa_comando(self):
         self.assertEqual(achar(payload('rsync -a a b', SAIDA, desc=''))[1], 'rsync -a a b')
