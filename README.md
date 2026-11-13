@@ -44,7 +44,7 @@ O script grava um arquivo JSON em `~/.claude/state/progresso/<id>.json`. O Paine
 | `detalhe` | Opcional. Texto curto ao lado da porcentagem, como a fase da tarefa. Não ponha o tempo que falta: o Painel calcula pelo ritmo. |
 | `inicio` | Opcional. Hora em que a tarefa começou (ms ou segundos). Define a ordem: quem começou primeiro fica em cima. Sem ele, vale a hora em que o Painel viu o arquivo pela primeira vez. |
 | `atualizado` | Hora da última gravação (ms ou segundos). Obrigatório. Sem novidade por 2 minutos, a tarefa aparece como parada. Parada por mais de 30 minutos, ela sai da lista (o processo foi cancelado). |
-| `fim` | `true` quando acabou. A tarefa desce pro cartão de concluídas e some depois de 24 horas. |
+| `fim` | `true` quando acabou. A tarefa desce pro cartão de concluídas e some depois de 10 minutos. |
 
 Se o seu script já grava JSON com outros nomes de campo, ajuste em **Nomes dos campos** nas configurações. Ex.: `{"feito":"done","total":"size"}`.
 

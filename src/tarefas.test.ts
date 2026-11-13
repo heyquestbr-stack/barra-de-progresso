@@ -36,7 +36,8 @@ test('estadoDe: ativa, parada, concluída e concluída velha some', () => {
   assert.equal(estadoDe(base, AGORA + 60_000), 'ativa')
   assert.equal(estadoDe(base, AGORA + 3 * 60_000), 'parada')
   assert.equal(estadoDe({ ...base, fim: true }, AGORA + 3 * 60_000), 'concluida')
-  assert.equal(estadoDe({ ...base, fim: true }, AGORA + 25 * 3_600_000), null)
+  assert.equal(estadoDe({ ...base, fim: true }, AGORA + 9 * 60_000), 'concluida')
+  assert.equal(estadoDe({ ...base, fim: true }, AGORA + 11 * 60_000), null)
 })
 
 test('estadoDe: parada há mais de 30 min foi cancelada e sai da lista', () => {

@@ -10,7 +10,7 @@ export type Amostra = { t: number; feito: number }
 export type Tarefa = Bruta & { estado: Estado; pct: number | null; etaMs: number | null }
 
 export const CAMPOS_PADRAO: Campos = { nome: 'nome', feito: 'feito', total: 'total', unidade: 'unidade', detalhe: 'detalhe', inicio: 'inicio', atualizado: 'atualizado', fim: 'fim' }
-export const REGRAS_PADRAO: Regras = { paradaMs: 2 * 60_000, concluidaMs: 24 * 3_600_000, canceladaMs: 30 * 60_000 }
+export const REGRAS_PADRAO: Regras = { paradaMs: 2 * 60_000, concluidaMs: 10 * 60_000, canceladaMs: 30 * 60_000 }
 const JANELA_MS = 5 * 60_000
 
 function num(v: unknown): number | null {
