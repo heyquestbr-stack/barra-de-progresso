@@ -2,7 +2,7 @@
   "manifestVersion": 2,
   "id": "painel",
   "name": "Painel",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Barras de progresso de qualquer script, ao vivo na sidebar.",
   "engines": {
     "orca": ">=1.4.248"
