@@ -103,6 +103,10 @@ class Achar(unittest.TestCase):
         self.assertEqual(achar(payload('until grep -q X /tmp/a; do sleep 5; done', SAIDA, desc=''))[1],
                          'Tarefa sem nome (w)')
 
+    def test_servidor_nao_vira_barra(self):
+        for c in ['cd /x && (nohup npm run dev > /tmp/d.log 2>&1 &)', 'pnpm dev', 'npx next dev -p 4321', 'python3 -m http.server 8000']:
+            self.assertIsNone(achar(payload(c, SAIDA)), c)
+
     def test_movido_pro_segundo_plano(self):
         resp = {'stdout': 'Command did not complete within its 120s timeout and was moved to the background (ID: z9). '
                           'Output is being written to: /tmp/s/tasks/z9.output.'}

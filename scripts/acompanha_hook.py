@@ -14,8 +14,8 @@ import shlex
 import subprocess
 import sys
 
-# comandos que ja gravam a propria barra (ou pediram pra nao ter)
-PULA = re.compile(r'#\s*sem-barra|state/progresso|progresso[-\w]*\.(?:py|sh)\b|com-barra|copia-rapida|acompanha(?:_hook)?\.py')
+# comandos que ja gravam a propria barra, pediram pra nao ter, ou sao servidor (nunca terminam: nao e tarefa)
+PULA = re.compile(r'#\s*sem-barra|\b(?:npm|pnpm|yarn|bun)\s+(?:run\s+)?(?:dev|start|serve)\b|\bnext\s+(?:dev|start)\b|\bvite\b|http\.server|state/progresso|progresso[-\w]*\.(?:py|sh)\b|com-barra|copia-rapida|acompanha(?:_hook)?\.py')
 TAREFA = re.compile(r'(/[^\s"\'\\]*?/tasks/[\w-]+\.output)')
 NOHUP = re.compile(r'\bnohup\b.*?(?:&>|\d?>>?)\s*([^\s;&|]+)')
 
