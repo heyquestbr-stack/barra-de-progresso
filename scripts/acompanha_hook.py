@@ -26,7 +26,9 @@ def achar(p):
     cmd = ti.get('command') or ''
     if PULA.search(cmd) or re.search(r'#\s*sem-barra', ti.get('description') or ''):
         return None
-    nome = (ti.get('description') or '').strip() or cmd.strip()[:60]
+    # sem descricao: nunca o comando cru (ilegivel no Painel); diz de que pasta veio
+    pasta = os.path.basename((p.get('cwd') or '').rstrip('/')) or 'outra aba'
+    nome = (ti.get('description') or '').strip() or f'Tarefa sem nome ({pasta})'
 
     m = NOHUP.search(cmd)
     if m:

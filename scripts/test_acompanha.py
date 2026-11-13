@@ -99,6 +99,10 @@ class Achar(unittest.TestCase):
         self.assertEqual(achar(payload('rsync -a a b', SAIDA)),
                          ('/private/tmp/claude-501/x/tasks/abc123.output', 'Copia o cache'))
 
+    def test_sem_descricao_nao_usa_comando_cru(self):
+        self.assertEqual(achar(payload('until grep -q X /tmp/a; do sleep 5; done', SAIDA, desc=''))[1],
+                         'Tarefa sem nome (w)')
+
     def test_movido_pro_segundo_plano(self):
         resp = {'stdout': 'Command did not complete within its 120s timeout and was moved to the background (ID: z9). '
                           'Output is being written to: /tmp/s/tasks/z9.output.'}
@@ -143,8 +147,6 @@ class Achar(unittest.TestCase):
         self.assertEqual(apagando('rm -f a.txt', '/w'), [])
         self.assertEqual(apagando('ls', '/w'), [])
 
-    def test_sem_descricao_usa_comando(self):
-        self.assertEqual(achar(payload('rsync -a a b', SAIDA, desc=''))[1], 'rsync -a a b')
 
 
 if __name__ == '__main__':
