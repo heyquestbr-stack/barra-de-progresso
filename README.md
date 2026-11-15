@@ -77,7 +77,7 @@ E no `~/.claude/settings.json`, dentro de `"hooks"`:
 
 Testes: `python3 -m unittest scripts/test_acompanha.py`.
 
-## Background agents get a bar too (0.6.0)
+## Background agents, workflows and monitors get a bar too (0.7.0)
 
 Before 0.6.0 only Bash tasks got an automatic bar. A subagent started with `run_in_background` ran with no bar at all. Two more hooks fix that.
 
@@ -85,6 +85,8 @@ Before 0.6.0 only Bash tasks got an automatic bar. A subagent started with `run_
 - **Detail:** `N passos · <last tool>`, updated every 3 s from the agent's transcript.
 - **End:** the `SubagentStop` hook marks the agent as done and the bar closes as `terminou`. If the agent's file does not change for 20 min, the bar closes as `parou sem resposta`.
 - **Skip it:** an agent that runs in the foreground never gets a bar.
+- **Workflow:** a `Workflow` run gets a bar named `Workflow: <name>` with `<phase> · N de M agentes prontos`. It reads the run's `journal.jsonl`. It closes as `terminou` when every agent has answered and nothing changed for 3 min, or as `parou sem resposta` after 20 min of silence.
+- **Monitor:** a `Monitor` watch gets a bar named after its description, like any background Bash task (same hook as Bash).
 
 **Turn on** (same `<pasta do plugin>` as above):
 
@@ -92,12 +94,14 @@ Before 0.6.0 only Bash tasks got an automatic bar. A subagent started with `run_
 ln -sf "<pasta do plugin>/scripts/agente_barra.py" ~/.claude/scripts/agente_barra.py
 ```
 
-In `~/.claude/settings.json`, add one more entry to `"PostToolUse"` and a new `"SubagentStop"` list inside `"hooks"`:
+In `~/.claude/settings.json`, add three more entries to `"PostToolUse"` and a new `"SubagentStop"` list inside `"hooks"`:
 
 ```json
 "PostToolUse": [
   { "matcher": "Bash",  "hooks": [ { "type": "command", "command": "python3 \"$HOME/.claude/scripts/acompanha_hook.py\"", "timeout": 5 } ] },
-  { "matcher": "Agent", "hooks": [ { "type": "command", "command": "python3 \"$HOME/.claude/scripts/agente_barra.py\" --hook", "timeout": 5 } ] }
+  { "matcher": "Agent", "hooks": [ { "type": "command", "command": "python3 \"$HOME/.claude/scripts/agente_barra.py\" --hook", "timeout": 5 } ] },
+  { "matcher": "Workflow", "hooks": [ { "type": "command", "command": "python3 \"$HOME/.claude/scripts/agente_barra.py\" --hook", "timeout": 5 } ] },
+  { "matcher": "Monitor", "hooks": [ { "type": "command", "command": "python3 \"$HOME/.claude/scripts/acompanha_hook.py\"", "timeout": 5 } ] }
 ],
 "SubagentStop": [
   { "hooks": [ { "type": "command", "command": "python3 \"$HOME/.claude/scripts/agente_barra.py\" --fim", "timeout": 5 } ] }

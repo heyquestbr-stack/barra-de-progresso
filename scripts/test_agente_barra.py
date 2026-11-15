@@ -1,10 +1,11 @@
+import json
 import os
 import sys
 import tempfile
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from agente_barra import achar, estado, marca_fim, passos  # noqa: E402
+from agente_barra import achar, achar_wf, estado, estado_wf, marca_fim, passos  # noqa: E402
 
 OUT = '/private/tmp/claude-501/proj/sess/tasks/a1b2c3d4e5.output'
 
@@ -73,6 +74,50 @@ class Estado(unittest.TestCase):
     def test_marca_ignora_id_estranho(self):
         marca_fim({'agent_id': '../../x'}, self.marcas)
         self.assertFalse(os.path.exists(self.marcas))
+
+
+class Workflow(unittest.TestCase):
+    def setUp(self):
+        self.d = tempfile.TemporaryDirectory()
+        self.j = os.path.join(self.d.name, 'journal.jsonl')
+
+    def tearDown(self):
+        self.d.cleanup()
+
+    def jornal(self, *tipos):
+        with open(self.j, 'w') as f:
+            for t, fase in tipos:
+                f.write(json.dumps({'type': t, 'phase': fase}) + '\n')
+        return os.path.getmtime(self.j)
+
+    def test_achar(self):
+        p = {'tool_name': 'Workflow', 'tool_response': {'status': 'async_launched', 'taskId': 'w1',
+             'workflowName': 'site-v2', 'transcriptDir': '/x/wf_1'}}
+        self.assertEqual(achar_wf(p), ('/x/wf_1', 'w1', 'Workflow: site-v2'))
+        self.assertIsNone(achar_wf({'tool_response': {'taskId': 'w1'}}))
+
+    def test_andamento(self):
+        t = self.jornal(('launched', ''), ('started', 'Preparo'), ('started', 'Preparo'), ('result', ''))
+        e = estado_wf('w1', 'Workflow: x', t - 5, self.d.name, t + 10)
+        self.assertFalse(e['fim'])
+        self.assertEqual((e['feito'], e['total'], e['detalhe']), (1, 0, 'Preparo · 1 de 2 agentes prontos'))
+
+    def test_todos_prontos_e_parado_termina(self):
+        t = self.jornal(('started', 'A'), ('result', ''))
+        self.assertFalse(estado_wf('w1', 'x', t - 5, self.d.name, t + 60)['fim'])
+        e = estado_wf('w1', 'x', t - 5, self.d.name, t + 181)
+        self.assertEqual((e['fim'], e['detalhe']), (True, 'terminou'))
+
+    def test_agente_sem_resposta_espera_ate_20_min(self):
+        t = self.jornal(('started', 'A'))
+        self.assertFalse(estado_wf('w1', 'x', t - 5, self.d.name, t + 600)['fim'])
+        e = estado_wf('w1', 'x', t - 5, self.d.name, t + 1201)
+        self.assertEqual((e['fim'], e['detalhe']), (True, 'parou sem resposta'))
+
+    def test_pasta_ainda_nao_nasceu(self):
+        nada = os.path.join(self.d.name, 'nao-existe')
+        self.assertFalse(estado_wf('w1', 'x', 1000, nada, 1060)['fim'])
+        self.assertTrue(estado_wf('w1', 'x', 1000, nada, 1121)['fim'])
 
 
 if __name__ == '__main__':

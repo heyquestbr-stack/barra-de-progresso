@@ -44,7 +44,7 @@ def achar(p):
     m = TAREFA.search(json.dumps(resp, ensure_ascii=False))
     if m:
         return m.group(1), nome
-    tid = resp.get('backgroundTaskId') if isinstance(resp, dict) else None
+    tid = (resp.get('backgroundTaskId') or resp.get('taskId')) if isinstance(resp, dict) else None  # Monitor manda taskId
     if tid:
         return tarefa(p, tid), nome
     return None

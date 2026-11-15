@@ -153,5 +153,13 @@ class Achar(unittest.TestCase):
 
 
 
+class MonitorPayload(unittest.TestCase):
+    def test_monitor_usa_taskid_e_descricao(self):
+        p = {'tool_input': {'description': 'render dos carrosseis', 'command': 'until grep -q ok x.log; do sleep 5; done'},
+             'tool_response': {'taskId': 'bo79cxyfb', 'timeoutMs': 900000, 'persistent': False},
+             'scratchpad_dir': '/private/tmp/claude-501/proj/sess/scratchpad'}
+        self.assertEqual(achar(p), ('/private/tmp/claude-501/proj/sess/tasks/bo79cxyfb.output', 'render dos carrosseis'))
+
+
 if __name__ == '__main__':
     unittest.main()
