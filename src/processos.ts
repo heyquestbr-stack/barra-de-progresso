@@ -1,4 +1,4 @@
-// Detector de processos longos de transferência (rclone, rsync, ditto, cp -R, git, scp), sem wrapper nem hook.
+// Detector de processos longos (transferência, mídia, build/instalação e scripts soltos), sem wrapper nem hook.
 // Lógica pura: o worker passa o texto de `ps -axo pid,ppid,etime,command` e recebe tarefas sem total ("rodando há X").
 import type { Bruta } from './tarefas'
 
@@ -10,6 +10,21 @@ export const MINIMO_MS = 30_000
 /** Barra do hook ou do progresso.py nasce junto com o processo: até 90 s de diferença conta como a mesma. */
 const JANELA_DEDUPE_MS = 90_000
 const MAX_NOME = 28
+/** Script solto (python/node/bash) só vira barra depois de 3 min: 30 s pegaria comando rápido demais. */
+export const MINIMO_SCRIPT_MS = 180_000
+
+/** Programas que fazem um trabalho longo e terminam (mídia, compactação, imagem de disco). */
+const PESADOS = new Set(['ffmpeg', 'HandBrakeCLI', 'yt-dlp', 'whisper', 'whisper-cli', 'whisper-cpp', 'Blender', 'blender', 'tar', 'zip', 'unzip', '7z', '7zz', 'hdiutil', 'xcodebuild', 'dd', 'ditto-pack'])
+const GERENCIADORES = new Set(['npm', 'pnpm', 'yarn', 'bun'])
+const GER_SUB = new Set(['install', 'i', 'ci', 'add', 'build', 'test', 'publish'])
+const INTERPRETES = new Set(['python', 'python3', 'node', 'bun', 'deno', 'bash', 'sh', 'zsh', 'ruby', 'tsx', 'ts-node'])
+const SCRIPT_EXT = /\.(?:py|js|mjs|cjs|ts|sh|rb)$/
+/** Servidor, daemon, vigia e peça de infraestrutura: nunca terminam, não são tarefa. */
+const NAO_E_TAREFA = /(?:mcp|server|serve\b|daemon|watch|--stdio|\bdev\b|worker|plugin|node_modules|claude-mem|http\.server|\bvite\b|\bnext\b|lsp|language-server|shell-snapshot|\borca\b|\.claude\/(?:plugins|scripts\/(?:acompanha|agente_barra))|#\s*sem-barra)/i
+/** ffmpeg em live: rtmp/srt/udp/rtsp, `-listen`, saída tee/flv/mpegts. */
+const STREAM = /(?:rtmps?|srt|udp|rtp|rtsp):\/\/|\s-listen\b|\s-f\s+(?:tee|flv|mpegts|rtsp)\b/i
+/** Quem roda comando do Claude Code: o zsh do shell-snapshot ou o binário `claude`. */
+const DO_CLAUDE = /shell-snapshot|(?:^|\/)claude(?:\s|$)/
 
 const WRAPPERS = /(?:^|\/)(?:progresso[-\w]*\.(?:py|sh)|acompanha(?:_hook)?\.py|copia-rapida\.sh)(?:\s|$)/
 const PREFIXOS = new Set(['env', 'nice', 'time', 'caffeinate', 'sudo', 'nohup', 'command', 'exec'])
@@ -100,11 +115,39 @@ function analisar(cmd: string): Analise | null {
     return { programa: 'git', sub, args: resto }
   }
   if (exe === 'rsync' || exe === 'ditto' || exe === 'scp') return { programa: exe, sub: '', args }
+  if (PESADOS.has(exe)) {
+    if (STREAM.test(cmd)) return null // live/stream nunca termina e leva a chave no comando
+    return { programa: exe, sub: '', args }
+  }
+  if (GERENCIADORES.has(exe)) {
+    const sub = args.find((a) => !a.startsWith('-')) ?? ''
+    const alvo = sub === 'run' ? args[args.indexOf('run') + 1] ?? '' : sub
+    if (!(GER_SUB.has(alvo) || (sub === 'run' && /^(?:build|test|compile|export|render|bundle)/.test(alvo)))) return null
+    return { programa: exe, sub: sub === 'run' ? `run ${alvo}` : sub, args: [] }
+  }
+  if (exe === 'brew' || exe === 'pip' || exe === 'pip3') {
+    const sub = args.find((a) => !a.startsWith('-')) ?? ''
+    return /^(?:install|upgrade|update|reinstall)$/.test(sub) ? { programa: exe, sub, args: [] } : null
+  }
+  if (exe === 'docker' && args[0] === 'build') return { programa: 'docker', sub: 'build', args: [] }
   if (exe === 'cp') {
     const flags = args.filter((a) => /^-[A-Za-z]+$/.test(a)).join('')
     return /[Rra]/.test(flags) ? { programa: 'cp', sub: '-R', args } : null
   }
   return null
+}
+
+/** Script solto: interpretador + arquivo de script, fora de servidor/infra. Nome = interpretador: arquivo. */
+function scriptSolto(cmd: string): Analise | null {
+  if (WRAPPERS.test(cmd) || NAO_E_TAREFA.test(cmd)) return null
+  const t = cmd.trim().split(/\s+/)
+  let i = 0
+  while (i < t.length && (PREFIXOS.has(t[i]) || /^[A-Za-z_]\w*=/.test(t[i]))) i++
+  const exe = t[i]?.split('/').pop() ?? ''
+  if (!INTERPRETES.has(exe)) return null
+  const arq = t.slice(i + 1).find((a) => !a.startsWith('-'))
+  if (!arq || !SCRIPT_EXT.test(arq)) return null
+  return { programa: exe, sub: '', args: [arq] }
 }
 
 export function reconhecer(cmd: string): string | null {
@@ -126,7 +169,15 @@ function posicionais(programa: string, args: string[]): string[] {
 
 export function nomeDoProcesso(cmd: string): string {
   const a = analisar(cmd)
-  if (!a) return sanitizar(cmd).slice(0, 60)
+  if (!a) {
+    const sc = scriptSolto(cmd)
+    return sc ? `${sc.programa}: ${encurtar(sc.args[0])}` : sanitizar(cmd).slice(0, 60)
+  }
+  if (PESADOS.has(a.programa)) {
+    const ultimo = [...a.args].reverse().find((x) => !/^[-\[]/.test(x) && !x.includes('://'))
+    return ultimo ? `${a.programa}: ${encurtar(ultimo)}` : a.programa
+  }
+  if (GERENCIADORES.has(a.programa) || ['brew', 'pip', 'pip3', 'docker'].includes(a.programa)) return `${a.programa} ${a.sub}`.trim()
   const pos = posicionais(a.programa, a.args)
   const titulo = [a.programa, a.sub].filter(Boolean).join(' ')
   if (!pos.length) return titulo
@@ -140,8 +191,15 @@ export function nomeDoProcesso(cmd: string): string {
 /** Processos de transferência com mais de 30 s de vida, prontos pra entrar na lista como tarefa sem total. */
 export function lerProcessos(procs: readonly Proc[], agora: number, barras: readonly BarraExistente[]): Bruta[] {
   const porPid = new Map(procs.map((p) => [p.pid, p]))
-  const programaDe = (p: Proc): string | null => analisar(p.cmd)?.programa ?? null
-  const daVez = procs.filter((p) => p.idadeMs >= MINIMO_MS && programaDe(p))
+  const doClaude = (p: Proc): boolean => {
+    let a = porPid.get(p.ppid)
+    for (let n = 0; a && n < 10; n++) { if (DO_CLAUDE.test(a.cmd)) return true; a = porPid.get(a.ppid) }
+    return false
+  }
+  // script solto só entra se foi o Claude Code que lançou (senão pegaria tudo que o Mac roda) e tem 3 min
+  const solto = (p: Proc): boolean => p.idadeMs >= MINIMO_SCRIPT_MS && scriptSolto(p.cmd) !== null && doClaude(p)
+  const programaDe = (p: Proc): string | null => analisar(p.cmd)?.programa ?? (scriptSolto(p.cmd) ? `script:${scriptSolto(p.cmd)!.programa}` : null)
+  const daVez = procs.filter((p) => (p.idadeMs >= MINIMO_MS && analisar(p.cmd)) || solto(p))
   const out: Bruta[] = []
   for (const p of daVez) {
     // filho de wrapper (progresso.py, acompanha.py...) ou de outro processo do mesmo programa (git pull -> git fetch)

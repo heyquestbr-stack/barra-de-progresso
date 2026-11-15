@@ -2,7 +2,7 @@
   "manifestVersion": 2,
   "id": "painel",
   "name": "Painel",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Barras de progresso de qualquer script, ao vivo na sidebar.",
   "engines": {
     "orca": ">=1.4.248"
@@ -36,7 +36,7 @@
       },
       {
         "key": "detectarProcessos",
-        "title": "Achar sozinho rclone, rsync, git e cópias longas (mais de 30 s)",
+        "title": "Achar sozinho cópias, ffmpeg, builds e scripts longos",
         "type": "boolean",
         "default": true
       },

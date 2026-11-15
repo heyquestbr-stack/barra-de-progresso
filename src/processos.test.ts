@@ -112,3 +112,46 @@ test('lerProcessos: barra do hook ou do progresso.py já ativa para o mesmo coma
   assert.equal(lerProcessos(ps, AGORA, [{ ...base, fim: true }]).length, 1)
   assert.equal(lerProcessos(ps, AGORA, [{ ...base, inicio: AGORA - 3_000_000 }]).length, 1)
 })
+
+test('reconhecer: ffmpeg, tar, build/instalação e docker build contam; npm run dev e install de servidor não', () => {
+  assert.ok(reconhecer('ffmpeg -i in.mov -c:v libx264 out.mp4'))
+  assert.ok(reconhecer('tar -czf x.tgz pasta'))
+  assert.ok(reconhecer('npm run build'))
+  assert.ok(reconhecer('pnpm install'))
+  assert.ok(reconhecer('brew install ffmpeg'))
+  assert.ok(reconhecer('docker build -t x .'))
+  assert.equal(reconhecer('npm run dev'), null)
+  assert.equal(reconhecer('npm start'), null)
+  assert.equal(reconhecer('brew list'), null)
+  assert.equal(reconhecer('docker ps'), null)
+})
+
+test('nomeDoProcesso: ffmpeg mostra o arquivo de saída; npm mostra o subcomando', () => {
+  assert.equal(nomeDoProcesso('ffmpeg -i in.mov -c:v libx264 /Volumes/T7/out/final.mp4'), 'ffmpeg: final.mp4')
+  assert.equal(nomeDoProcesso('npm run build'), 'npm run build')
+})
+
+const SNAP = '/bin/zsh -c source /Users/q/Library/Application Support/orca/claude-profiles/x/home/shell-snapshots/snap.sh && eval python3 job.py'
+
+test('lerProcessos: script solto lançado pelo Claude passa de 3 min e vira barra', () => {
+  const ps = [
+    proc({ pid: 50, ppid: 1, cmd: SNAP, idadeMs: 400_000 }),
+    proc({ pid: 51, ppid: 50, cmd: 'python3 /Users/q/proj/job.py --lote 4', idadeMs: 400_000 })
+  ]
+  const r = lerProcessos(ps, AGORA, [])
+  assert.deepEqual(r.map((x) => x.nome), ['python3: job.py'])
+})
+
+test('lerProcessos: script solto com menos de 3 min, sem Claude no caminho ou servidor não vira barra', () => {
+  assert.equal(lerProcessos([proc({ pid: 50, ppid: 1, cmd: SNAP }), proc({ pid: 51, ppid: 50, cmd: 'python3 job.py', idadeMs: 100_000 })], AGORA, []).length, 0)
+  assert.equal(lerProcessos([proc({ pid: 52, ppid: 1, cmd: 'python3 /Users/q/outro/job.py', idadeMs: 900_000 })], AGORA, []).length, 0)
+  const claude = proc({ pid: 60, ppid: 1, cmd: '/Users/q/.local/bin/claude --chrome-native-host', idadeMs: 900_000 })
+  for (const cmd of ['node /x/mcp-server.cjs', 'node /x/worker-service.cjs --daemon', 'python3 -m http.server 8000', 'node /p/plugins/y/index.js'])
+    assert.equal(lerProcessos([claude, proc({ pid: 61, ppid: 60, cmd, idadeMs: 900_000 })], AGORA, []).length, 0, cmd)
+})
+
+test('reconhecer: ffmpeg de live/stream (rtmp, srt, -listen, tee) nunca vira barra', () => {
+  assert.equal(reconhecer('ffmpeg -listen 1 -i rtmp://127.0.0.1:1935/live/q -map 0 -c copy -f tee [f=flv]rtmps://x.live/app/SEGREDO'), null)
+  assert.equal(reconhecer('ffmpeg -i in.mov -f mpegts srt://host:9000'), null)
+  assert.ok(reconhecer('ffmpeg -i in.mov out.mp4'))
+})

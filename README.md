@@ -110,13 +110,17 @@ In `~/.claude/settings.json`, add three more entries to `"PostToolUse"` and a ne
 
 Tests: `python3 -m unittest scripts/test_agente_barra.py`.
 
-## Acha sozinho as cópias e transferências longas
+## Acha sozinho o que roda sem barra
 
-Esqueceu o wrapper? O Painel olha os processos do Mac (`ps`, a cada 2 s) e mostra uma barra para qualquer `rclone` (copy, copyto, sync, move, moveto, size, e ls/lsf/lsl com `-R`), `rsync`, `ditto`, `cp -R`, `scp`, `git push/clone/fetch/pull/lfs` que passe de 30 s de vida. Sem total conhecido, a barra mostra "rodando há X min" e some quando o processo termina.
+Esqueceu o wrapper? O Painel olha os processos do Mac (`ps`, a cada 2 s) e mostra uma barra sem total ("rodando há X min"). Ela some quando o processo termina.
 
-- **Nome:** `rclone copy: compdrive:…/Boma → xtdrive:BKP`. Senha, token, `user:senha@` e `?query` de URL nunca aparecem.
+- **Cópia e transferência (mais de 30 s):** `rclone` (copy, copyto, sync, move, moveto, size, e ls/lsf/lsl com `-R`), `rsync`, `ditto`, `cp -R`, `scp`, `git push/clone/fetch/pull/lfs`.
+- **Mídia e pacote (mais de 30 s):** `ffmpeg`, `HandBrakeCLI`, `yt-dlp`, `whisper`, `blender`, `tar`, `zip`, `7z`, `hdiutil`, `xcodebuild`, `dd`, `npm/pnpm/yarn/bun` (install, ci, add, build, test, run build), `brew`/`pip` install, `docker build`.
+- **Script solto (mais de 3 min):** `python`, `node`, `bash`... rodando um arquivo `.py/.js/.ts/.sh`, **só se o Claude Code lançou** (o processo tem o shell do Claude ou o `claude` entre os ancestrais). Servidor, daemon, vigia, MCP e plugin ficam de fora.
+- **Nunca aparece:** `ffmpeg` de live (rtmp, srt, udp, `-listen`, tee): nunca termina e leva a chave de stream no comando.
+- **Nome:** `rclone copy: compdrive:…/Boma → xtdrive:BKP`, `ffmpeg: final.mp4`, `python3: job.py`. Senha, token, `user:senha@` e `?query` de URL nunca aparecem.
 - **Sem barra dobrada:** rclone com `--stats`/`--rc`, filho do `progresso.py`/`acompanha.py`, e processo que já tem barra do hook ficam de fora. Vale a barra com número.
-- **Desligar:** configuração **Achar sozinho rclone, rsync, git…** (liga por padrão).
+- **Desligar:** configuração **Achar sozinho cópias, ffmpeg, builds e scripts longos** (liga por padrão).
 
 ## Extra: upload com rclone
 
