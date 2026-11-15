@@ -77,6 +77,35 @@ E no `~/.claude/settings.json`, dentro de `"hooks"`:
 
 Testes: `python3 -m unittest scripts/test_acompanha.py`.
 
+## Background agents get a bar too (0.6.0)
+
+Before 0.6.0 only Bash tasks got an automatic bar. A subagent started with `run_in_background` ran with no bar at all. Two more hooks fix that.
+
+- **Bar name:** `Agente: <the agent's description>`.
+- **Detail:** `N passos · <last tool>`, updated every 3 s from the agent's transcript.
+- **End:** the `SubagentStop` hook marks the agent as done and the bar closes as `terminou`. If the agent's file does not change for 20 min, the bar closes as `parou sem resposta`.
+- **Skip it:** an agent that runs in the foreground never gets a bar.
+
+**Turn on** (same `<pasta do plugin>` as above):
+
+```sh
+ln -sf "<pasta do plugin>/scripts/agente_barra.py" ~/.claude/scripts/agente_barra.py
+```
+
+In `~/.claude/settings.json`, add one more entry to `"PostToolUse"` and a new `"SubagentStop"` list inside `"hooks"`:
+
+```json
+"PostToolUse": [
+  { "matcher": "Bash",  "hooks": [ { "type": "command", "command": "python3 \"$HOME/.claude/scripts/acompanha_hook.py\"", "timeout": 5 } ] },
+  { "matcher": "Agent", "hooks": [ { "type": "command", "command": "python3 \"$HOME/.claude/scripts/agente_barra.py\" --hook", "timeout": 5 } ] }
+],
+"SubagentStop": [
+  { "hooks": [ { "type": "command", "command": "python3 \"$HOME/.claude/scripts/agente_barra.py\" --fim", "timeout": 5 } ] }
+]
+```
+
+Tests: `python3 -m unittest scripts/test_agente_barra.py`.
+
 ## Acha sozinho as cópias e transferências longas
 
 Esqueceu o wrapper? O Painel olha os processos do Mac (`ps`, a cada 2 s) e mostra uma barra para qualquer `rclone` (copy, copyto, sync, move, moveto, size, e ls/lsf/lsl com `-R`), `rsync`, `ditto`, `cp -R`, `scp`, `git push/clone/fetch/pull/lfs` que passe de 30 s de vida. Sem total conhecido, a barra mostra "rodando há X min" e some quando o processo termina.
@@ -104,7 +133,7 @@ A seção Com você pode resumir a última fala de cada agente numa linha, com `
 ```sh
 orca plugin dev load .   # carrega a pasta no Orca
 orca plugin test .       # roda os testes do plugin
-python3 -m unittest scripts/test_acompanha.py   # testes da barra automática
+python3 -m unittest scripts/test_acompanha.py scripts/test_agente_barra.py   # testes da barra automática
 # o detector de processos tem testes em src/processos.test.ts (rodam no orca plugin test)
 ```
 
